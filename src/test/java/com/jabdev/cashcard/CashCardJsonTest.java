@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.json.JsonTest;
 import org.springframework.boot.test.json.JacksonTester;
+import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 
@@ -58,5 +59,19 @@ class CashCardJsonTest{
     void cashCardListSerializationTest() throws IOException {
         assertThat(jsonList.write(cashCards)).isStrictlyEqualToJson("list.json");
     }
+
+    @Test
+    void cashCardListDeserialization() throws IOException {
+        String expected = """
+                [
+                    { "id": 99, "amount": 123.45 },
+                    { "id": 100, "amount": 1.00 },
+                    { "id": 101, "amount": 150.00 }
+                ]
+                """;
+        assertThat(jsonList.parse(expected)).isEqualTo(cashCards);
+    }
+
+
 
 }
