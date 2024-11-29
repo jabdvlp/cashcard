@@ -11,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import net.minidev.json.JSONArray;
 import org.springframework.test.annotation.DirtiesContext;
 
+import javax.print.Doc;
 import javax.swing.text.Document;
 
 import java.io.IOException;
@@ -26,7 +27,10 @@ class CashCardApplicationTests {
 
     @Test
     void shouldReturnACashCardWhenDataIsSaved() {
-        ResponseEntity<String> response = restTemplate.getForEntity("/cashcards/99", String.class);
+
+        ResponseEntity<String> response = restTemplate
+                .withBasicAuth("sarah1", "abc123")
+                .getForEntity("/cashcards/99", String.class);
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
         DocumentContext documentContext = JsonPath.parse(response.getBody());
@@ -49,7 +53,7 @@ class CashCardApplicationTests {
     @Test
     @DirtiesContext
     void shouldCreateANewCashCard(){
-        CashCard newCashCard = new CashCard(null, 250.00);
+        CashCard newCashCard = new CashCard(null, 250.00, "sarah1");
         ResponseEntity<Void> createResponse = restTemplate.postForEntity("/cashcards", newCashCard, Void.class);
         assertThat(createResponse.getStatusCode()).isEqualTo(HttpStatus.CREATED);
 
@@ -95,7 +99,31 @@ class CashCardApplicationTests {
 
     }
 
+    @Test
+    void shouldReturnASortedPageOfCashCards() {
+        ResponseEntity<String> response = restTemplate.getForEntity("/cashcards?page=0&size=1&sort=amount,desc", String.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
 
+        DocumentContext documentContext = JsonPath.parse(response.getBody());
+        JSONArray read = documentContext.read("$[*]");
+        assertThat(read.size()).isEqualTo(1);
+
+        double amount = documentContext.read("$[0].amount");
+        assertThat(amount).isEqualTo(150.00);
+    }
+
+    @Test
+    void shouldReturnASortedPageOfCashCardsWithNoParametersAndUseDefaultValues() {
+        ResponseEntity<String> response = restTemplate.getForEntity("/cashcards", String.class);
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
+
+        DocumentContext documentContext = JsonPath.parse(response.getBody());
+        JSONArray page = documentContext.read("$[*]");
+        assertThat(page.size()).isEqualTo(3);
+
+        JSONArray amounts = documentContext.read("$..amount");
+        assertThat(amounts).containsExactly(1.00, 123.45, 150.00);
+    }
 
 
 
